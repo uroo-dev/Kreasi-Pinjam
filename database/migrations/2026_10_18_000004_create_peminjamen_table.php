@@ -14,10 +14,7 @@ return new class extends Migration
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
             $table->string('kode_peminjaman', 30)->unique();
-            $table->foreignId('user_id')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->date('tanggal_pinjam');
             $table->date('tanggal_jatuh_tempo');
             $table->enum('status', [
@@ -28,15 +25,9 @@ return new class extends Migration
                 'dikembalikan',
                 'dibatalkan'
             ])->default('menunggu');
-
-            $table->foreignId('disetujui_oleh')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
+            $table->foreignId('disetujui_oleh')->nullable()->constrained('users')->nullOnDelete();
             $table->datetime('tanggal_disetujui')->nullable();
             $table->text('catatan')->nullable();
-
             $table->timestamps();
         });
     }

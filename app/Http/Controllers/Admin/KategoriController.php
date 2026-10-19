@@ -23,7 +23,7 @@ class KategoriController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama',
+            'nama_kategori',
             'deskripsi',
         ]);
 
@@ -47,7 +47,7 @@ class KategoriController extends Controller
     {
 
         $data = $request->validate([
-            'nama',
+            'nama_kategori',
             'deskripsi',
         ]);
 

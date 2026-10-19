@@ -13,19 +13,14 @@ return new class extends Migration
     {
         Schema::create('alat', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('kategori_id')
-                ->constrained('kategori')
-                ->restrictOnDelete();
-
+            $table->foreignId('kategori_id')->constrained('kategori')->restrictOnDelete();
             $table->string('kode_alat', 30)->unique();
             $table->string('nama_alat', 150);
             $table->text('deskripsi')->nullable();
             $table->integer('stok_total')->default(0);
             $table->integer('stok_tersedia')->default(0);
             $table->decimal('harga_sewa', 12, 2)->default(0);
-            $table->enum('status', ['tersedia', 'tidak_tersedia'])
-                ->default('tersedia');
-
+            $table->enum('status', ['tersedia', 'tidak_tersedia'])->default('tersedia');
             $table->timestamps();
             $table->softDeletes();
         });

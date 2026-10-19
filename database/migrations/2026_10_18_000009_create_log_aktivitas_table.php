@@ -13,11 +13,7 @@ return new class extends Migration
     {
         Schema::create('log_aktivitas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('modul', 50);
             $table->string('aksi', 50);
             $table->text('deskripsi');

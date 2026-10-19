@@ -3,31 +3,27 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\LogAktivitas;
+use App\Models\Peminjam;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function login()
     {
-        //
+        return view('Auth.login');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function register()
     {
-        //
+        return view('Auth.register');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function login_proses(Request $request)
     {
         $credential = $request->validate([
@@ -37,60 +33,83 @@ class AuthController extends Controller
 
         if (Auth::attempt($credential)) {
             $request->session()->regenerate();
-            $request->user()->foreceFill(['last_login' => now()])->save();
-            return redirect()->intended();
+
+            LogAktivitas::log(
+                modul: 'auth',
+                aksi: 'login',
+                deskripsi: 'Pengguna berhasil masuk ke aplikasi',
+                userId: $request->user()->id,
+                ipAddress: $request->ip()
+            );
+
+            return redirect()->intended(route('dashboard'));
         }
+
+        return redirect()->back()
+            ->withInput($request->only('nama'))
+            ->with('error', 'Periksa kembali Nama dan Password anda');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function register_proses(Request $request)
     {
         $data = $request->validate([
-            'nama' => 'required',
-            'email' => 'required',
-            'password' => 'required',
-            'role' => 'required',
-            'no_hp' => 'required',
+            'nama' => 'required|string|max:100|unique:users,nama',
+            'email' => 'required|email|max:100|unique:users,email',
+            'password' => ['required', Password::min(8), 'confirmed'],
+            'no_hp' => 'required|string|max:20',
+            'alamat' => 'required|string',
         ]);
 
         try {
-            User::create($data);
-            return redirect()->back()->with('success', 'Registrasi Berhasil');
+            $user = DB::transaction(function () use ($request, $data) {
+                $user = User::create([
+                    'nama' => $data['nama'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($data['password']),
+                    'role' => 'peminjam',
+                    'no_hp' => $data['no_hp'],
+                ]);
+
+                Peminjam::create([
+                    'user_id' => $user->id,
+                    'alamat' => $data['alamat'],
+                ]);
+
+                LogAktivitas::log(
+                    modul: 'auth',
+                    aksi: 'register',
+                    deskripsi: 'Registrasi peminjam baru: '.$user->nama,
+                    userId: $user->id,
+                    dataBaru: $user->only('nama', 'email', 'role'),
+                    ipAddress: $request->ip()
+                );
+
+                return $user;
+            });
+
+            return redirect()->route('login')->with('success', 'Registrasi berhasil, silakan masuk');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e);
+            report($e);
+
+            return redirect()->back()->withInput()->with('error', 'Registrasi gagal, silakan coba lagi');
         }
-
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function logout(Request $request)
     {
+        LogAktivitas::log(
+            modul: 'auth',
+            aksi: 'logout',
+            deskripsi: 'Pengguna keluar dari aplikasi',
+            userId: $request->user()->id,
+            ipAddress: $request->ip()
+        );
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('');
+        return redirect()->route('login');
     }
 }
