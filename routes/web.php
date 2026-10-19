@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AlatController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Auth\AuthController;
@@ -18,8 +19,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/kategori', [KategoriController::class, 'store'])->name('kategori/store');
     Route::put('/kategori/{kategori}', [KategoriController::class, 'update'])->name('kategori/update');
     Route::delete('/kategori/{kategori}', [KategoriController::class, 'destroy'])->name('kategori/destroy');
-});
 
+    Route::get('/alat', [AlatController::class, 'index'])->name('alat/get');
+    Route::post('/alat', [AlatController::class, 'store'])->name('alat/store');
+    Route::put('/alat/{alat}', [AlatController::class, 'update'])->name('alat/update');
+    Route::delete('/alat/{alat}', [AlatController::class, 'destroy'])->name('alat/destroy');
+});
 Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->group(function () {
     //
 });
