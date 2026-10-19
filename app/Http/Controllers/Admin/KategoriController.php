@@ -4,65 +4,88 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kategori;
+use App\Models\LogAktivitas;
 use Illuminate\Http\Request;
 
 class KategoriController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // $kategoris = Kategori::latest()->paginate();
-        // return redirect()->route('');
+        $kategoris = Kategori::query()
+            ->withCount('alat')
+            ->when($request->filled('cari'), function ($query) use ($request) {
+                $query->where('nama_kategori', 'like', '%'.$request->cari.'%');
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('Admin.kategori', compact('kategoris'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nama_kategori',
-            'deskripsi',
+            'nama_kategori' => 'required|string|max:100|unique:kategori,nama_kategori',
+            'deskripsi' => 'nullable|string|max:500',
         ]);
 
-        Kategori::create($data);
+        $kategori = Kategori::create($data);
 
-        return redirect()->back()->with('success', 'Kategori Berhasil Ditambahkan');
+        LogAktivitas::log(
+            modul: 'kategori',
+            aksi: 'create',
+            deskripsi: 'Menambah kategori baru: '.$kategori->nama_kategori,
+            userId: $request->user()->id,
+            dataBaru: $kategori->toArray(),
+            ipAddress: $request->ip()
+        );
+
+        return redirect()->route('kategori/get')->with('success', 'Kategori berhasil ditambahkan');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Kategori $kategori)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Kategori $kategori)
     {
-
         $data = $request->validate([
-            'nama_kategori',
-            'deskripsi',
+            'nama_kategori' => 'required|string|max:100|unique:kategori,nama_kategori,'.$kategori->id,
+            'deskripsi' => 'nullable|string|max:500',
         ]);
 
         $kategori->update($data);
 
-        return redirect()->back()->with('success', 'Kategori Berhasil Diupdate');
+        LogAktivitas::log(
+            modul: 'kategori',
+            aksi: 'update',
+            deskripsi: 'Memperbarui kategori: '.$kategori->nama_kategori,
+            userId: $request->user()->id,
+            dataLama: $kategori->getOriginal(),
+            dataBaru: $kategori->toArray(),
+            ipAddress: $request->ip()
+        );
+
+        return redirect()->route('kategori/get')->with('success', 'Kategori berhasil diupdate');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Kategori $kategori)
+    public function destroy(Request $request, Kategori $kategori)
     {
-        Kategori::deleted($kategori);
+        $nama = $kategori->nama_kategori;
 
-        return redirect()->back()->with('success', 'Kategori Berhasil Dihapus');
+        $kategori->delete();
+
+        LogAktivitas::log(
+            modul: 'kategori',
+            aksi: 'delete',
+            deskripsi: 'Menghapus kategori: '.$nama,
+            userId: $request->user()->id,
+            dataLama: $kategori->getOriginal(),
+            ipAddress: $request->ip()
+        );
+
+        return redirect()->route('kategori/get')->with('success', 'Kategori berhasil dihapus');
     }
 }
