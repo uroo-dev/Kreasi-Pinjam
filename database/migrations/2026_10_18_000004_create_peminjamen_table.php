@@ -23,7 +23,7 @@ return new class extends Migration
                 'ditolak',
                 'dipinjam',
                 'dikembalikan',
-                'dibatalkan'
+                'dibatalkan',
             ])->default('menunggu');
             $table->foreignId('disetujui_oleh')->nullable()->constrained('users')->nullOnDelete();
             $table->datetime('tanggal_disetujui')->nullable();

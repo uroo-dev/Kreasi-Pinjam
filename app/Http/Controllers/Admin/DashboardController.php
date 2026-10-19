@@ -3,63 +3,37 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Alat;
+use App\Models\Kategori;
+use App\Models\Peminjaman;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return view('Admin.dashboard');
-    }
+        $stats = [
+            'totalPengguna' => User::count(),
+            'totalAlat' => Alat::count(),
+            'totalKategori' => Kategori::count(),
+            'totalPeminjaman' => Peminjaman::count(),
+            'peminjamanMenunggu' => Peminjaman::where('status', 'menunggu')->count(),
+            'stokTotal' => (int) Alat::sum('stok_total'),
+            'stokTersedia' => (int) Alat::sum('stok_tersedia'),
+        ];
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        $transaksiTerbaru = Peminjaman::query()
+            ->with('user')
+            ->latest()
+            ->limit(5)
+            ->get();
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $alatPerKategori = Kategori::query()
+            ->withCount('alat')
+            ->orderByDesc('alat_count')
+            ->limit(4)
+            ->get();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return view('Admin.dashboard', compact('stats', 'transaksiTerbaru', 'alatPerKategori'));
     }
 }
