@@ -49,5 +49,7 @@ class DatabaseSeeder extends Seeder
             'institusi' => 'Universitas Contoh',
             'pekerjaan' => 'Mahasiswa',
         ]);
+
+        $this->call([KategoriAlatSeeder::class]);
     }
 }

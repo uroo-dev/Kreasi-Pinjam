@@ -40,6 +40,11 @@ class Peminjaman extends Model
         return $this->hasMany(DetailPeminjaman::class);
     }
 
+    public function details()
+    {
+        return $this->hasMany(DetailPeminjaman::class);
+    }
+
     public function jaminan()
     {
         return $this->hasOne(JaminanPeminjaman::class);
@@ -88,5 +93,10 @@ class Peminjaman extends Model
     public function totalHari(): int
     {
         return $this->tanggal_pinjam->diffInDays($this->tanggal_jatuh_tempo) + 1;
+    }
+
+    public function sudahJatuhTempo(): bool
+    {
+        return $this->tanggal_jatuh_tempo->isToday() || $this->tanggal_jatuh_tempo->isPast();
     }
 }
