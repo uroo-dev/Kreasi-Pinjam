@@ -12,13 +12,27 @@
         <div class="relative">
             <button onclick="toggleNotifDropdown()" class="relative p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition" aria-label="Notifikasi">
                 <i data-lucide="bell" class="w-5 h-5"></i>
-                @if (isset($notifikasi) && $notifikasi > 0)
+                @if ($notifikasi['jumlah'] > 0)
                     <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-white"></span>
                 @endif
             </button>
-            <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 p-2">
+            <div id="notif-dropdown" class="hidden absolute right-0 top-full mt-2 w-96 bg-white rounded-2xl shadow-xl border border-slate-100 p-2">
                 <p class="text-xs font-bold text-slate-400 px-3 py-2">Notifikasi</p>
-                <p class="px-3 py-2.5 text-sm text-slate-500">Belum ada notifikasi.</p>
+                @forelse ($notifikasi['items'] as $item)
+                    <button type="button"
+                        onclick="location.href='{{ $item['route'] }}'; toggleNotifDropdown()"
+                        class="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition">
+                        <span class="w-8 h-8 rounded-xl {{ $item['warna'] }} flex items-center justify-center shrink-0">
+                            <i data-lucide="{{ $item['ikon'] }}" class="w-4 h-4 {{ $item['warna_ikon'] }}"></i>
+                        </span>
+                        <span>
+                            <span class="block text-sm font-semibold text-slate-800">{{ $item['judul'] }}</span>
+                            <span class="block text-xs text-slate-400 mt-0.5">{{ $item['ket'] }}</span>
+                        </span>
+                    </button>
+                @empty
+                    <p class="px-3 py-2.5 text-sm text-slate-500">Belum ada notifikasi.</p>
+                @endforelse
             </div>
         </div>
         <button class="flex items-center gap-2.5 pl-2 border-l border-slate-200 hover:opacity-80 transition" tabindex="-1">
