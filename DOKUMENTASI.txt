@@ -1,0 +1,47 @@
+Aplikasi Peminjaman Alat (KreasiPinjam)
+=====================================
+
+1. Kebutuhan Sistem
+   - PHP >= 8.2 (pdo-mysql, intl, mbstring)
+   - Composer 2
+   - MariaDB 10.x / MySQL 8
+
+2. Instalasi
+   a. composer install
+   b. cp .env.example .env && php artisan key:generate
+   c. Siapkan database `kreasi_db` dan user DB sesuai .env
+   d. php artisan migrate:fresh --seed
+   e. php artisan storage:link
+   f. php artisan serve
+
+3. Akun Demo (password: password)
+   +----------------------------+-------------+----------+
+   | Nama                       | Role        | Password |
+   +----------------------------+-------------+----------+
+   | uroo                       | admin       | password |
+   | petugas                    | petugas     | password |
+   | peminjam                   | peminjam    | password |
+   +----------------------------+-------------+----------+
+   Login menggunakan kolom nama (bukan email).
+
+4. Alur Utama
+   Peminjam ajukan -> Petugas verifikasi jaminan -> Persetujuan -> Serahkan
+   -> Peminjaman aktif -> Pengembalian (baik/rusak/hilang) -> Denda (jika ada)
+   -> Pembayaran denda -> Selesai.
+
+5. Aturan Denda (konfigurasi di config/peminjaman.php)
+   - Keterlambatan : Rp 5.000 / hari / unit  (env DENDA_KETERLAMBATAN_PER_HARI)
+   - Kerusakan     : 50% harga sewa / unit
+   - Kehilangan    : 10 x harga sewa / unit
+
+6. Laporan
+   - Peminjaman : filter tanggal & status, ringkasan total
+   - Pengembalian: kondisi unit, keterlambatan, total denda
+   - Denda      : jenis denda, status pembayaran, nilai lunas & belum lunas
+
+7. Struktur teknis
+   - Laravel 12, Blade + Tailwind (template NusantaraMart UI)
+   - Role enum col users.role, middleware role:
+   - Transaksi database pada pengajuan, persetujuan, dan pengembalian
+   - Soft-delete pada kategori, alat, kategori & user
+   - Log aktivitas untuk audit trail

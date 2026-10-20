@@ -1,58 +1,129 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# KreasiPinjam — Aplikasi Peminjaman Alat
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web peminjaman alat (gear / peralatan) berbasis Laravel 12 dengan tiga peran pengguna:
+**admin**, **petugas**, dan **peminjam**. Pengguna bahasa Indonesia.
 
-## About Laravel
+## Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Modul | Deskripsi |
+| --- | --- |
+| Autentikasi | Login per-role, registrasi peminjam, middleware proteksi halaman |
+| Dashboard | Ringkasan statistik per role (total unit, transaksi aktif, denda) |
+| Kategori & Alat | CRUD kategori/alat oleh admin, stok total & stok tersedia otomatis |
+| Pengelolaan Pengguna | CRUD pengguna (admin), profil peminjam (NIM/NIP, alamat, institusi) |
+| Peminjaman | Pengajuan peminjam → verifikasi jaminan → persetujuan petugas → serahkan |
+| Pengembalian | Proses kondisi unit (baik/rusak/hilang), penghitungan denda otomatis |
+| Denda | Keterlambatan, kerusakan (% harga), kehilangan (kelipatan harga) dan pencatatan pembayaran |
+| Tanggungan | Pemblokiran pengajuan baru jika denda belum lunas atau terlambat kembali |
+| Laporan | Rekap peminjaman, pengembalian, dan denda per periode tanggal |
+| Log Aktivitas | Jejak audit setiap aksi penting (login, CRUD, pengembalian, denda) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Alur Utama Peminjaman
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Peminjam** mengajukan peminjaman dari katalog (tanggal pinjam, jatuh tempo, jumlah unit, catatan).
+2. **Petugas** mencatat jaminan / bukti pembayaran lalu menerima jaminan.
+3. **Petugas** menyetujui pengajuan — stok unit otomatis berkurang.
+4. **Petugas** menyerahkan alat (status menjadi *dipinjam*).
+5. **Petugas** memproses pengembalian dengan kondisi tiap unit:
+   - `baik` → stok kembali penuh
+   - `rusak` → denda 50% harga sewa × jumlah unit, stok total berkurang
+   - `hilang` → denda 10 × harga sewa × jumlah unit, stok total berkurang
+   - terlambat → denda `Rp5.000/hari/unit` (dapat di-env, see `config/peminjaman.php`)
+6. **Peminjam** melihat riwayat dan mencatat pembayaran denda via petugas.
 
-## Learning Laravel
+## Instalasi
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Prasyarat
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP >= 8.2 dengan ekstensi sqlite, pdo-mysql, intl, mbstring, gd
+- Composer 2
+- MariaDB/MySQL 10.x
+- Node.js (opsional, hanya untuk aset Tailwind via CDN — tidak perlu build)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Langkah
 
 ```bash
-composer require laravel/boost --dev
+# 1. Clone & masuk direktori
+git clone <repo> KreasiPinjam && cd KreasiPinjam
 
-php artisan boost:install
+# 2. Install dependency
+composer install
+
+# 3. Salin env dan ubah kredensial database
+cp .env.example .env
+php artisan key:generate
+
+# 4. Siapkan database (nama bebas; default .env = kreasi_db)
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS kreasi_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -e "CREATE USER IF NOT EXISTS 'uroodev'@'localhost' IDENTIFIED BY 'uroodev';"
+mysql -u root -e "GRANT ALL PRIVILEGES ON kreasi_db.* TO 'uroodev'@'localhost'; FLUSH PRIVILEGES;"
+
+# 5. Migrasi + seeder (akun demo, kategori, alat contoh)
+php artisan migrate:fresh --seed
+
+# 6. Jalankan server
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Akun Demo
 
-## Contributing
+| Nama | Email | Password | Role |
+| --- | --- | --- | --- |
+| uroo | uroo@gmail.com | password | admin |
+| petugas | petugas@gmail.com | password | petugas |
+| peminjam | peminjam@gmail.com | password | peminjam |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Login memakai kolom `nama` (bukan email): gunakan nama di atas (`uroo`, `petugas`, atau `peminjam`).
 
-## Code of Conduct
+### Konfigurasi Denda & Durasi
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Nilai bawaan di `config/peminjaman.php` (bisa dioverride via `.env`):
 
-## Security Vulnerabilities
+```
+DENDA_KETERLAMBATAN_PER_HARI=5000
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```php
+durasi_minimal             // 1 hari
+durasi_maksimal            // 14 hari
+denda_keterlambatan_per_hari
+denda_kerusakan_persen     // 50
+denda_kehilangan_kelipatan // 10
+```
 
-## License
+## Menjalankan Test
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan test
+```
+
+19 kasus uji fitur mengcovering autentikasi, CRUD alat, pengajuan, persetujuan, pengembalian denda, dan laporan.
+
+## Struktur Direktori
+
+```
+app/
+├── Http/Controllers/{Auth,Admin,Petugas,Peminjam}
+├── Models/          # Alat, Kategori, Peminjam, Peminjaman, DetailPeminjaman, ...
+├── Services/        # PeminjamanService (logika bisnis transaksional)
+└── Support/         # Notifikasi, Tanggungan, Menu, Status, LogAktivitas
+database/
+├── factories/       # UserFactory, AlatFactory, KategoriFactory
+├── migrations/      # 10 tabel inti
+└── seeders/         # DatabaseSeeder, KategoriAlatSeeder
+resources/views/
+├── Admin/           # dashboard, kategori, alat, user, laporan-*
+├── Petugas/         # dashboard, persetujuan, pengembalian, denda
+├── Peminjam/        # dashboard, katalog, riwayat, denda
+└── Layout/, Auth/
+```
+
+## Import Database Siap Pakai
+
+File `peminjaman_alat.sql` berisi struktur + data siap mutakhir. Eksekusi:
+
+```bash
+mysql -u uroodev -proodev kreasi_db < peminjaman_alat.sql
+```
+
+Dokumentasi lengkap tersedia di `DOCUMENTATION.md`.
